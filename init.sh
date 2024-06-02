@@ -2,7 +2,7 @@
 
 function __readINI() {
   local INIFILE=$1;
-  local SECTION=$2; 
+  local SECTION=$2;
   local ITEM=$3
   local _readIni
   _readIni=$(awk -F '=' '/['"$SECTION"']/{a=1}a==1&&$1~/'"$ITEM"'/{print $2;exit}' "$INIFILE")
@@ -28,7 +28,7 @@ type -t \$1 &>/dev/null
 if [ \$? -ne 0 ] || [[ \$1 = "" ]];then
   param=\$(grep "^function" \$0 | grep -v 'function __' | cut -d ' ' -f 2 | cut -d '(' -f '1' | awk '{print "    " \$0}')
   echo -e "avaliable params \$1(function name): \n\$param"
-  echo "[ERROR] function [\$1] not exist!" && exit 1 
+  echo "[ERROR] function [\$1] not exist!" && exit 1
 fi
 "\$@"
 EOF
@@ -41,8 +41,11 @@ EOF
 if [[ \$LSB_TYPE = "config" ]];then
   __readINI \${BASE_DIR}/conf/config.ini "\$@"
 else
-  bash \${BASE_DIR}/shell/\${LSB_TYPE}.sh "\$@"
-  [ \$? -ne 0 ] && kill -15 \$PPID && exit 1  # 异常退出、继续向上抛出（kill）
+  echo "\$(timeout 0.1 cat <&0)" | bash \${BASE_DIR}/shell/\${LSB_TYPE}.sh "\$@"
+  if [ \$? -ne 0 ];then
+    kill -15 \$PPID
+    exit 1  # 异常退出、继续向上抛出（kill）
+  fi
 fi
 EOF
   chmod 777 lsb && mv lsb /usr/bin/
@@ -74,7 +77,7 @@ else
   if [ \$? -ne 0 ] || [[ \$funName = "" ]];then
     param=\$(grep "^function" \$lsbPath | grep -v 'function __' | grep "^function \${LSB_TYPE}_" | cut -d ' ' -f 2 | cut -d '(' -f '1' | awk -v pattern="\${LSB_TYPE}_" '{gsub("^" pattern,"",\$0);print}' | awk '{print "    " \$0}')
     [[ ! \$param == "" ]] && echo -e "avaliable params \$1(function name): \n\$param"
-    echo "[ERROR] function [\$1] not exist!" && exit 1 
+    echo "[ERROR] function [\$1] not exist!" && exit 1
   fi
   shift
   \$funName "\$@"
@@ -97,7 +100,7 @@ trap "kill -15 \$PPID;exit 1" 15  # 捕获异常，向上抛出（kill）
 
 function __readINI() {
   local INIFILE=\$1;
-  local SECTION=\$2; 
+  local SECTION=\$2;
   local ITEM=\$3
   local _readIni=\$(awk -F '=' '/['\$SECTION']/{a=1}a==1&&\$1~/'\$ITEM'/{print \$2;exit}' \$INIFILE)
   # trim

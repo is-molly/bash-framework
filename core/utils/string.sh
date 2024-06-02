@@ -11,6 +11,7 @@
 function trim(){
   local param=$*
   if [[ ${#param} -eq 0 ]];then
+    # 从标准输入读取，即使用管道符号读取的方式
     param=$(timeout 0.1 cat <&0)
   fi
   echo -e "${param}" | grep -o "[^ ]\+\( \+[^ ]\+\)*"
